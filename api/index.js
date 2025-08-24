@@ -1,24 +1,34 @@
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
-// Import routes
-const authRoutes = require('./routes/auth.routes');
-const userRoutes = require('./routes/userRoutes');
-const userApiRoutes = require('./routes/user.routes');
-const cartRoutes = require('./routes/cart.routes');
-const categoryRoutes = require('./routes/category.routes');
-const productRoutes = require('./routes/product.routes');
-const contactRoutes = require('./routes/contact.routes');
-const adminRoutes = require('./routes/admin.routes');
-const adminAuthRoutes = require('./routes/adminAuth.routes');
-const orderRoutes = require('./routes/order.routes');
-const addressRoutes = require('./routes/address.routes');
-const paymentRoutes = require('./routes/payment.routes');
-const { notFound, errorHandler } = require('./middlewares/errorHandler');
+let routesLoaded = false;
+let authRoutes, userRoutes, userApiRoutes, cartRoutes, categoryRoutes, productRoutes;
+let contactRoutes, adminRoutes, adminAuthRoutes, orderRoutes, addressRoutes, paymentRoutes;
+let notFound, errorHandler;
+
+// Try to load routes and middleware, but don't fail if they can't be loaded
+try {
+  authRoutes = require('../routes/auth.routes');
+  userRoutes = require('../routes/userRoutes');
+  userApiRoutes = require('../routes/user.routes');
+  cartRoutes = require('../routes/cart.routes');
+  categoryRoutes = require('../routes/category.routes');
+  productRoutes = require('../routes/product.routes');
+  contactRoutes = require('../routes/contact.routes');
+  adminRoutes = require('../routes/admin.routes');
+  adminAuthRoutes = require('../routes/adminAuth.routes');
+  orderRoutes = require('../routes/order.routes');
+  addressRoutes = require('../routes/address.routes');
+  paymentRoutes = require('../routes/payment.routes');
+  const errorHandlerModule = require('../middlewares/errorHandler');
+  notFound = errorHandlerModule.notFound;
+  errorHandler = errorHandlerModule.errorHandler;
+  routesLoaded = true;
+} catch (error) {
+  console.error('Error loading routes:', error.message);
+  routesLoaded = false;
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -133,35 +143,37 @@ app.get('/', (req, res) => {
 app.use(notFound);
 app.use(errorHandler);
 
-// Start server
-const server = app.listen(PORT, () => {
-  console.clear(); // Clear terminal for clean output
-  console.log('\n🚀 Misika Backend Server');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 Server: http://localhost:${PORT}`);
-  console.log(`🔗 API Base: http://localhost:${PORT}/api`);
-  console.log(`📊 Health: http://localhost:${PORT}/health`);
-  console.log(`🎯 Frontend: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('✅ Server ready - Watching for changes...\n');
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('\n🛑 Shutting down server gracefully...');
-  server.close(() => {
-    console.log('✅ Server closed successfully\n');
-    process.exit(0);
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  const server = app.listen(PORT, () => {
+    console.clear(); // Clear terminal for clean output
+    console.log('\n🚀 Misika Backend Server');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌐 Server: http://localhost:${PORT}`);
+    console.log(`🔗 API Base: http://localhost:${PORT}/api`);
+    console.log(`📊 Health: http://localhost:${PORT}/health`);
+    console.log(`🎯 Frontend: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('✅ Server ready - Watching for changes...\n');
   });
-});
 
-process.on('SIGINT', () => {
-  console.log('\n🛑 Shutting down server gracefully...');
-  server.close(() => {
-    console.log('✅ Server closed successfully\n');
-    process.exit(0);
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('\n🛑 Shutting down server gracefully...');
+    server.close(() => {
+      console.log('✅ Server closed successfully\n');
+      process.exit(0);
+    });
   });
-});
+
+  process.on('SIGINT', () => {
+    console.log('\n🛑 Shutting down server gracefully...');
+    server.close(() => {
+      console.log('✅ Server closed successfully\n');
+      process.exit(0);
+    });
+  });
+}
 
 module.exports = app;

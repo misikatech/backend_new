@@ -33,12 +33,9 @@ try {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Security middleware
-app.use(helmet());
-
-// CORS configuration
+// Basic CORS configuration
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: process.env.FRONTEND_URL || '*',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -101,19 +98,30 @@ app.get('/api/placeholder/:width/:height', (req, res) => {
   res.redirect(`https://via.placeholder.com/${width}x${height}/${color}/${textColor}?text=${encodeURIComponent(text)}`);
 });
 
-// API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/admin-auth', adminAuthRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/users', userRoutes); // This is for the OTP-based registration
-app.use('/api/user', userApiRoutes); // This is for user profile/wishlist
-app.use('/api/cart', cartRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/contact', contactRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/addresses', addressRoutes);
-app.use('/api/payments', paymentRoutes);
+// API routes - only load if routes were successfully imported
+if (routesLoaded) {
+  app.use('/api/auth', authRoutes);
+  app.use('/api/admin-auth', adminAuthRoutes);
+  app.use('/api/admin', adminRoutes);
+  app.use('/api/users', userRoutes); // This is for the OTP-based registration
+  app.use('/api/user', userApiRoutes); // This is for user profile/wishlist
+  app.use('/api/cart', cartRoutes);
+  app.use('/api/categories', categoryRoutes);
+  app.use('/api/products', productRoutes);
+  app.use('/api/contact', contactRoutes);
+  app.use('/api/orders', orderRoutes);
+  app.use('/api/addresses', addressRoutes);
+  app.use('/api/payments', paymentRoutes);
+} else {
+  // Fallback routes when main routes can't be loaded
+  app.use('/api/*', (req, res) => {
+    res.status(503).json({
+      success: false,
+      message: 'API routes are temporarily unavailable',
+      error: 'Routes could not be loaded'
+    });
+  });
+}
 
 // Add logging middleware to debug requests
 app.use((req, res, next) => {
@@ -127,6 +135,9 @@ app.get('/', (req, res) => {
     success: true,
     message: 'Misika API Server',
     version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    routesLoaded: routesLoaded,
+    timestamp: new Date().toISOString(),
     endpoints: {
       health: '/health',
       auth: '/api/auth',
@@ -140,8 +151,27 @@ app.get('/', (req, res) => {
 });
 
 // Error handling middleware
-app.use(notFound);
-app.use(errorHandler);
+if (routesLoaded && notFound && errorHandler) {
+  app.use(notFound);
+  app.use(errorHandler);
+} else {
+  // Basic error handling
+  app.use((req, res) => {
+    res.status(404).json({
+      success: false,
+      message: 'Route not found'
+    });
+  });
+
+  app.use((error, req, res, next) => {
+    console.error('Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+    });
+  });
+}
 
 // For local development
 if (process.env.NODE_ENV !== 'production') {

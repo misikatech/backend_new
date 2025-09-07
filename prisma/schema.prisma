@@ -8,21 +8,19 @@ datasource db {
 }
 
 model User {
-  id         String   @id @default(cuid())
-  username   String   @unique
-  email      String   @unique
-  password   String
-  firstName  String?
-  lastName   String?
-  phone      String?
-  role       Role     @default(USER)
-  isVerified Boolean  @default(false)
-  isActive   Boolean  @default(true)
-  avatar     String?
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  // Relations
+  id            String         @id @default(cuid())
+  username      String         @unique
+  email         String         @unique
+  password      String
+  firstName     String?
+  lastName      String?
+  phone         String?
+  role          Role           @default(USER)
+  isVerified    Boolean        @default(false)
+  isActive      Boolean        @default(true)
+  avatar        String?
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
   addresses     Address[]
   cartItems     CartItem[]
   orders        Order[]
@@ -64,41 +62,37 @@ model Category {
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
-  // Relations
   products    Product[]
 
   @@map("categories")
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  description String?
-  price       Decimal  @db.Decimal(10, 2)
-  salePrice   Decimal? @db.Decimal(10, 2)
-  sku         String   @unique
-  stock       Int      @default(0)
-  images      String[]
-  categoryId  String?
-  isFeatured  Boolean  @default(false)
-  isActive    Boolean  @default(true)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-
-  // Relations
-  category      Category?      @relation(fields: [categoryId], references: [id])
+  id            String         @id @default(cuid())
+  name          String
+  slug          String         @unique
+  description   String?
+  price         Decimal        @db.Decimal(10, 2)
+  salePrice     Decimal?       @db.Decimal(10, 2)
+  sku           String         @unique
+  stock         Int            @default(0)
+  images        String[]
+  categoryId    String?
+  isFeatured    Boolean        @default(false)
+  isActive      Boolean        @default(true)
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
   cartItems     CartItem[]
-  wishlistItems WishlistItem[]
   orderItems    OrderItem[]
+  category      Category?      @relation(fields: [categoryId], references: [id])
   reviews       Review[]
+  wishlistItems WishlistItem[]
 
   @@map("products")
 }
 
 model Address {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   name      String
   phone     String
   street    String
@@ -106,53 +100,49 @@ model Address {
   state     String
   pincode   String
   type      AddressType @default(HOME)
-  isDefault Boolean  @default(false)
+  isDefault Boolean     @default(false)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   orders    Order[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   @@map("addresses")
 }
 
 model CartItem {
-  id        String   @id @default(cuid())
-  userId    String
-  productId String
-  quantity  Int      @default(1)
+  id         String   @id @default(cuid())
+  userId     String
+  productId  String
+  quantity   Int      @default(1)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
-
-  // Relations
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
   @@map("cart_items")
 }
 
 model Order {
-  id              String        @id @default(uuid())
-  userId          String
-  addressId       String?       // Make this optional
-  orderNumber     String        @unique
-  status          OrderStatus   @default(PENDING)
-  paymentMethod   PaymentMethod
-  paymentStatus   PaymentStatus @default(PENDING)
-  subtotal        Decimal       @db.Decimal(10, 2)
-  shippingCost    Decimal       @db.Decimal(10, 2)
-  tax             Decimal       @db.Decimal(10, 2)
-  total           Decimal       @db.Decimal(10, 2)
-  notes           String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  // Relations
-  user            User          @relation(fields: [userId], references: [id])
-  address         Address?      @relation(fields: [addressId], references: [id])
-  items           OrderItem[]
-  payment         Payment?
+  id            String        @id @default(uuid())
+  userId        String
+  addressId     String?
+  orderNumber   String        @unique
+  status        OrderStatus   @default(PENDING)
+  paymentMethod PaymentMethod
+  paymentStatus PaymentStatus @default(PENDING)
+  subtotal      Decimal       @db.Decimal(10, 2)
+  shippingCost  Decimal       @db.Decimal(10, 2)
+  tax           Decimal       @db.Decimal(10, 2)
+  total         Decimal       @db.Decimal(10, 2)
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  items         OrderItem[]
+  address       Address?      @relation(fields: [addressId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
+  payment       Payment?
 
   @@map("orders")
 }
@@ -164,10 +154,8 @@ model OrderItem {
   quantity  Int
   price     Decimal @db.Decimal(10, 2)
   total     Decimal @db.Decimal(10, 2)
-
-  // Relations
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
 
   @@map("order_items")
 }
@@ -182,9 +170,7 @@ model Payment {
   transactionId   String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-
-  // Relations
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@map("payments")
 }
@@ -197,23 +183,20 @@ model Review {
   comment   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relations
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
   @@map("reviews")
 }
 
 model WishlistItem {
-  id        String   @id @default(cuid())
-  userId    String
-  productId String
+  id         String   @id @default(cuid())
+  userId     String
+  productId  String
   created_at DateTime @default(now())
-
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
   @@map("wishlist_items")
@@ -232,7 +215,6 @@ model Contact {
   @@map("contacts")
 }
 
-// Enums
 enum Role {
   USER
   ADMIN
